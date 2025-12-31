@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 
 const SITE_URL = "https://kosargyi.com/wp-json/wp/v2/posts?per_page=10";
@@ -12,52 +13,48 @@ async function getWebPage() {
     <head>
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>Video Extractor</title>
+      <title>My Personal Streaming</title>
       <style>
-        body { font-family: sans-serif; background: #111; color: #fff; padding: 10px; }
-        .card { background: #222; margin-bottom: 30px; border-radius: 12px; padding: 10px; border: 1px solid #444; }
-        h2 { font-size: 16px; margin-bottom: 10px; color: #f39c12; }
-        .video-box { width: 100%; aspect-ratio: 16/9; background: #000; border-radius: 8px; overflow: hidden; }
-        iframe { width: 100%; height: 100%; border: none; }
-        .no-video { padding: 20px; color: #777; font-style: italic; }
+        body { font-family: sans-serif; background: #050505; color: #fff; padding: 10px; margin: 0; }
+        .container { max-width: 800px; margin: auto; }
+        .card { background: #111; margin-bottom: 25px; border-radius: 15px; overflow: hidden; border: 1px solid #222; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
+        h2 { font-size: 16px; padding: 15px; margin: 0; color: #f1c40f; background: #1a1a1a; }
+        video { width: 100%; display: block; background: #000; }
+        .no-video { padding: 20px; color: #555; text-align: center; font-size: 14px; }
       </style>
     </head>
     <body>
-      <h1 style="text-align:center">Movie Stream</h1>
+      <div class="container">
+        <h1 style="text-align:center; color: #e74c3c;">KSG Player</h1>
   `;
 
   for (const post of posts) {
     const content = post.content.rendered;
     
-    // ၁။ Content ထဲမှာ iframe ပါလား အရင်ရှာမယ်
-    // ၂။ မပါရင် Link (https://doodstream.com/e/...) တွေကို လိုက်ရှာမယ်
-    const videoRegex = /https:\/\/(doodstream\.com|dood\.to|streamtape\.com|dood\.la)\/(e|v)\/[a-zA-Z0-9]+/g;
-    const foundLinks = content.match(videoRegex);
+    // .mp4 နဲ့ ဆုံးတဲ့ link တွေကို ရှာတဲ့ Regex (Wasabi သို့မဟုတ် အခြား direct links များအတွက်)
+    const mp4Regex = /https?:\/\/[^\s"'<>]+?\.(mp4|m3u8|webm)/g;
+    const foundLinks = content.match(mp4Regex);
 
     html += `<div class="card"><h2>${post.title.rendered}</h2>`;
 
     if (foundLinks && foundLinks.length > 0) {
-      foundLinks.forEach((link: string) => {
-        // Embed link ဖြစ်အောင် ပြုပြင်ခြင်း
-        let embedLink = link.replace('/v/', '/e/'); 
-        
-        html += `
-          <div class="video-box">
-            <iframe 
-              src="${embedLink}" 
-              sandbox="allow-forms allow-pointer-lock allow-same-origin allow-scripts"
-              allowfullscreen>
-            </iframe>
-          </div>`;
-      });
+      // ပထမဆုံး တွေ့တဲ့ link တစ်ခုကိုပဲ Player ထဲ ထည့်ပြမယ်
+      const videoSrc = foundLinks[0];
+      
+      html += `
+        <video controls preload="metadata" poster="">
+          <source src="${videoSrc}" type="video/mp4">
+          Your browser does not support the video tag.
+        </video>
+      `;
     } else {
-      html += `<div class="no-video">ဗီဒီယို Link ရှာမတွေ့ပါ။</div>`;
+      html += `<div class="no-video">ဗီဒီယို Direct Link ရှာမတွေ့ပါ။ (Doodstream ဖြစ်နိုင်သည်)</div>`;
     }
 
     html += `</div>`;
   }
 
-  html += `</body></html>`;
+  html += `</div></body></html>`;
   return html;
 }
 
