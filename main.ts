@@ -1,8 +1,6 @@
-
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 
-// API URL (Embed data ပါအောင် _embed parameter ထည့်ထားပါတယ်)
-const SITE_URL = "https://kosargyi.com/wp-json/wp/v2/posts?per_page=10&_embed";
+const SITE_URL = "https://kosargyi.com/wp-json/wp/v2/posts?per_page=10";
 
 async function getWebPage() {
   const res = await fetch(SITE_URL);
@@ -14,35 +12,49 @@ async function getWebPage() {
     <head>
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>Video Test</title>
+      <title>Video Extractor</title>
       <style>
-        body { font-family: sans-serif; background: #000; color: #fff; text-align: center; padding: 10px; }
-        .card { background: #1a1a1a; margin-bottom: 30px; border-radius: 10px; overflow: hidden; padding-bottom: 15px; border: 1px solid #333; }
-        h2 { font-size: 16px; padding: 10px; color: #eee; }
-        /* ဗီဒီယိုအကွက်ကို အပြည့်ပေါ်အောင် လုပ်တာပါ */
-        .video-container { position: relative; width: 100%; height: 0; padding-bottom: 56.25%; background: #000; }
-        .video-container iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none; }
+        body { font-family: sans-serif; background: #111; color: #fff; padding: 10px; }
+        .card { background: #222; margin-bottom: 30px; border-radius: 12px; padding: 10px; border: 1px solid #444; }
+        h2 { font-size: 16px; margin-bottom: 10px; color: #f39c12; }
+        .video-box { width: 100%; aspect-ratio: 16/9; background: #000; border-radius: 8px; overflow: hidden; }
+        iframe { width: 100%; height: 100%; border: none; }
+        .no-video { padding: 20px; color: #777; font-style: italic; }
       </style>
     </head>
     <body>
-      <h1>New Movies</h1>
+      <h1 style="text-align:center">Movie Stream</h1>
   `;
 
   for (const post of posts) {
-    // တစ်ခါတလေ iframe က oembed link အနေနဲ့ လာတတ်လို့ အဲ့ဒါကို လိုက်ရှာတာပါ
-    let videoHtml = post.content.rendered;
+    const content = post.content.rendered;
+    
+    // ၁။ Content ထဲမှာ iframe ပါလား အရင်ရှာမယ်
+    // ၂။ မပါရင် Link (https://doodstream.com/e/...) တွေကို လိုက်ရှာမယ်
+    const videoRegex = /https:\/\/(doodstream\.com|dood\.to|streamtape\.com|dood\.la)\/(e|v)\/[a-zA-Z0-9]+/g;
+    const foundLinks = content.match(videoRegex);
 
-    // Sandbox ထည့်ပြီး ကြော်ငြာပိတ်မယ်
-    const safeVideo = videoHtml.replace(/<iframe/g, '<iframe sandbox="allow-forms allow-pointer-lock allow-same-origin allow-scripts"');
+    html += `<div class="card"><h2>${post.title.rendered}</h2>`;
 
-    html += `
-      <div class="card">
-        <h2>${post.title.rendered}</h2>
-        <div class="video-container">
-          ${safeVideo}
-        </div>
-      </div>
-    `;
+    if (foundLinks && foundLinks.length > 0) {
+      foundLinks.forEach((link: string) => {
+        // Embed link ဖြစ်အောင် ပြုပြင်ခြင်း
+        let embedLink = link.replace('/v/', '/e/'); 
+        
+        html += `
+          <div class="video-box">
+            <iframe 
+              src="${embedLink}" 
+              sandbox="allow-forms allow-pointer-lock allow-same-origin allow-scripts"
+              allowfullscreen>
+            </iframe>
+          </div>`;
+      });
+    } else {
+      html += `<div class="no-video">ဗီဒီယို Link ရှာမတွေ့ပါ။</div>`;
+    }
+
+    html += `</div>`;
   }
 
   html += `</body></html>`;
